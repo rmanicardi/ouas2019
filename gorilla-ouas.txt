@@ -1,0 +1,163 @@
+10 rem *** qbasic gorilla for c64 *** by marco64 ***
+20 dim fr(13),cs(10),os(10):v=53248:s=54272:pl=1
+21 gosub 300
+30 poke19,64: rem === 
+31 gosub130: rem === init the graphics ===
+32 gosub330: rem === play gorilla's dance intro === 
+33 gosub590: rem === ask for user's input and enter the game loop === 
+34 pl=0:x=7:y=24:gosub700: rem === ask to restart the game ===
+40 print"--- nuovo gioco? (y/n) ---{home}":poke198,0:wait198,1:geta$:if a$="y"then30
+50 poke v+21,0:print"{clear}":poke 19,0:end
+60 rem === play sound ===
+70  for i=0 to (len(s$)/3)-1
+72     c$=mid$(s$,(1+i*3),3)
+73     w=asc(mid$(c$,1,1)) : rem === duration ===
+74     n=asc(mid$(c$,2,1))-64 : rem === note index ===
+75     ok=2^(asc(mid$(c$,3,1))-65) : rem === octave ===
+100    zw= fr(n)*ok
+101	   poke s,zw and 255
+102    poke s+1,int(zw/256)
+103    poke s+4,33
+110    for t=0 to w:next
+111	   poke s+4,32
+113 next
+114 return
+120 rem === city malen ===
+121 rem === wi = wind ===
+122 rem === ===
+130 poke v+21,0:wi=int(rnd(0)*16)-8: rem === reset all the sprites and init random wind value ===
+140 poke v+39,8:rem === set sprite 0 (gorilla) color to light brown ===  
+141 poke v+40,8:rem === set sprite 1 (gorilla) color to light brown ===   
+142 poke v+41,7:rem === set sprite 2 (banana) color to yellow ===  
+143 poke v+42,7:rem === set sprite 3 (sun) color to light brown ===  
+144 poke 2042,197:rem === load sprite 2 (banana) bitmap from memory 12608 (197*64)===
+145 poke v+32,0: rem === set border color to black ===
+146 poke v+33,6: rem === set background color to dark blue===
+147 poke v+5,20: rem == set sprite 2 Y coordinate to 20 ===
+150 print"{clear}{white}player1"tab(33)"player2"
+151 rem === init the color scheme of the buildings ===
+152 a$="{gray}{light gray}{green}{light gray}{pink}{gray}{light gray}{green}{gray}{light gray}"
+160 h=rnd(ti)*15+5
+161 os(0)=17:os(1)=17:os(2)=13:os(3)=9:os(4)=7:os(5)=8:os(6)=10:os(7)=13:os(8)=14:os(9)=16
+170 y=8:x=0:gosub700: rem === position cursor to row 8 (from top) ===
+171 gosub1000: rem === print the dome ===
+200 x=0:y=23:gosub700
+201 rem === print footer ===
+202 print"{reverse on}{space*6}gorilla - by roberto64 (2019){space*5}{home}"
+210 x=15:y=24:gosub700:print"wind:";wi;"{home}"
+211 rem === print the sprites ===
+220 gx(1)=84:gy(1)=os(2)*8+29: gx(2)=255: gy(2)=os(7)*8+29
+230 poke v,gx(1): poke v+1,gy(1): poke 2040,192 : rem == print sprite 0 at position v,v+1 from memory 12288 (192*64) (arm down gorilla 1) ===
+240 poke v+2,gx(2): poke v+3,gy(2): poke 2041,192: rem == print sprite 1 at position v+2,v+3 from memory 12288 (192*64) (arm down gorilla 2) === 
+250 poke v+6,173: poke v+7,93: poke 2043,195: rem == print sprite 3 at position v+6, v+7 from memory 12480 (195*64) (sun) ===
+260 poke v+23,0: rem === set all sprite size to normal Y $D017 ===
+261 poke v+29,0: rem === set all sprite size to normal X $D01D ===
+270 poke v+21,1+2+4+8:rem === enable sprites 0,1,2,3 $D015 ===
+280 return
+290 rem === init SID === 
+300 for l=s to s+24
+301  poke l,0
+302 next
+303 poke s+5,15
+304 poke s+24,15
+305 rem === read sound notes from data ===
+306 for i= 0 to 12
+307  read fr(i)
+308 next
+309 rem === load sprite data ===
+310 for t = 12288 to 12288 +(6*64)
+311 read zw
+312  poke t,zw
+313 next
+320 return
+330 rem === gorilla's dance ===
+340 if pl=0 then s$="{140}ac":gosub70:return: rem === if the game has already started, play a different tune and jump the dance===
+350 s$="{140}ee{140}he{140}af{140}af{140}le{140}af{140}cf{240}af"
+360 poke2040,193:poke2041,194
+361 gosub70
+362 poke2040,194:poke2041,193
+363 s$="{140}le{140}af{140}le{140}je{140}he{140}je{140}le"
+364 gosub70
+370 poke2040,193:poke2041,194
+380 poke2040,194:poke2041,193
+390 s$="{140}ac"
+400 poke2040,193:poke2041,194:gosub70
+410 poke2040,194:poke2041,193:gosub70
+420 poke2040,193:poke2041,194:gosub70
+430 poke2040,192:poke2041,192
+440 return
+450 rem === throw the banana ===
+460 poke v+5,0:sx=gx(pn):sy=gy(pn)-5:gr=9.81:wi=-wi:poke 2039+pn,195-pn : rem === draw the banana and raise gorilla's arm ===
+470 s$="{140}ac":gosub70 : rem === play banana thrown sound ===
+480 t=0:an=an/180*3.14159:zw=peek(v+31)+peek(v+30):ix=cos(an)*ve:iy=sin(an)*ve: rem == calculate new banana position ===
+490 x=sx+((ix*t)+(.5*(wi/5)*t*t))*di:y=sy+((-(iy*t))+(.5*gr*t*t))*.6
+500 if x<5 or x> 340 then poke2043,195:return
+510 if y<20 then y=20
+520 poke v+4,x and 255:poke v+5,y:poke v+16,-(x>255)*4:t=t+.1:zw=peek(v+30):if zw>0then550: rem === update sprite 2 (banana) position and check if there is any hit with another sprite ===
+530 if(peek(v+31)and4)andy>75then s$="{140}ac":gosub70:poke v+5,0:poke1024+int((y-46)/8)*40+int((x-(pn*8))/8),32:poke2043,195:return: rem === check collision with background ===
+540 goto490
+550 if zw and 8 then poke2043,196:goto530: rem === checks if banana has hit the sun ===
+560 wz=zw and 3:poke v+(wz-1)*2,peek(v+(wz-1)*2)-12: poke v+29,wz: rem === check if banana has hit the other gorilla ====
+570 s$="{140}ac": gosub70: poke v+21,3-wz+8
+580 gosub390:ex=1:return 
+590 rem === spielen ===
+600 ex=0 : wi=-wi
+610 input"{home}{down}angle: ";an: input"{home}{down*2}velocity: ";ve
+620 pn=1 :di=1:gosub450:poke2040,192:if ex then return
+630 print"{home}{down}{space*15}": print"{home}{down*2}{space*15}" 
+640 input"{home}{down}{space*23}angle: ";an
+650 input"{home}{down*2}{space*23}velocity: ";ve
+660 pn=2 :di=-1:gosub450:poke2041,192:if ex then return
+670 y=1:x=23:gosub700:print"{space*17}":y=2:gosub700:
+680 print"{space*17}":goto610
+690 rem === position cursor at x,y ===
+700 poke 214, y: poke 211,x: sys 58640: return
+710 rem === sound: note frequences ===
+720 data 0,277,293,311,329,349,370,392,415,440,466,494,523
+730 rem === sprite daten ===
+731 rem === gorlla no arm raised (192)==
+740 data ,248,,1,140,,1,252,,1,172,,,248,,,112,,7,255
+750 data ,31,223,192,63,223,224,123,174,240,114,114,112,115,254,112,113,252,112,57
+760 data 252,224,29,253,192,3,222,,3,142,,7,7,,7,7,,7,7,
+770 data 3,142,,
+771 rem === gorlla right arm raised (193)==
+780 data ,248,224,1,140,112,1,252,56,1,172,56,,248,120,,112,240,7,255
+790 data 224,31,223,192,63,223,,123,174,,114,114,,115,254,,113,252,,57
+800 data 252,,29,252,,3,222,,3,143,,7,7,,7,7,,7,7,
+810 data 3,142,,
+811 rem === gorlla left arm raised (194)==
+820 data 56,248,,113,140,,225,252,,225,172,,240,248,,120,112,,63,255
+830 data ,31,223,192,7,223,224,3,174,240,2,114,112,3,254,112,1,252,112,1
+840 data 252,224,1,253,192,3,222,,7,142,,7,7,,7,7,,7,7,
+850 data 3,142,,
+851 rem === sun smile (195)===
+860 data 129,24,128,64,60,0,68,60,32,64,60,0,33,24,128,32,126,0,32,255,0
+870 data 120,255,128,63,255,224,39,255,240,32,255,120,32,255,30,33,255,12,35,255,128
+880 data 39,255,128,39,255,192,39,255,192,32,255,192,32,255,192,32,255,192,32,255,0,
+891 rem === sun hit (196)===
+900 data 1,36,0,2,25,0,4,60,12,8,126,156,18,126,56,32,63,112,66,15,224
+910 data 128,135,224,0,7,224,0,255,224,3,255,224,15,143,240,12,31,240,0,31,248
+920 data 0,63,248,0,127,252,0,255,254,0,112,28,0,112,28,0,112,28,0,240,30,
+931 rem === banana (197)===
+940 data ,132,,,204,,,120,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+950 data ,,,,,,,,,,,,,,,,,,,,,,,,
+960 rem === print the dome ===
+1000 print "{space*13}{reverse on}{169}{223}{169}{223}{reverse off}{space*2}{reverse on}{space*2}{reverse off}{space*2}{reverse on}{169}{223}{169}{223}{reverse off}{space*13}{down}{left*40}";
+1001 print "{space*13}{reverse on}{space*4}{reverse off}{space*2}{reverse on}{space*2}{reverse off}{space*2}{reverse on}{space*4}{reverse off}{space*13}{down}{left*40}";
+1002 print "{space*13}{reverse on}{space*4}{reverse off}{space*2}{reverse on}{space*2}{reverse off}{space*2}{reverse on}{space*4}{reverse off}{space*13}{down}{left*40}";
+1003 print "{space*13}{reverse on}{space*4}{reverse off}{space}{reverse on}{169}{space*2}{223}{reverse off}{space}{reverse on}{space*4}{reverse off}{space*13}{down}{left*40}";
+1004 print "{space*13}{reverse on}{space*4}{169}{space*4}{223}{space*4}{reverse off}{space*13}{down}{left*40}";
+1005 print "{space*8}{reverse on}{169}{223}{reverse off}{space*3}{reverse on}{space*14}{reverse off}{space*3}{reverse on}{169}{223}{reverse off}{space*8}{down}{left*40}";
+1006 print "{space*8}{reverse on}{space*2}{reverse off}{space*3}{reverse on}{space*14}{reverse off}{space*3}{reverse on}{space*2}{reverse off}{space*8}{down}{left*40}";
+1007 print "{space*8}{reverse on}{space*2}{reverse off}{space*2}{reverse on}{169}{space*14}{223}{reverse off}{space*2}{reverse on}{space*2}{reverse off}{space*8}{down}{left*40}";
+1008 print "{space}{reverse on}{169}{223}{169}{223}{reverse off}{space*3}{reverse on}{space*2}{reverse off}{space}{reverse on}{169}{space*16}{223}{reverse off}{space}{reverse on}{space*2}{reverse off}{space*3}{reverse on}{169}{223}{169}{223}{reverse off}{space}{down}{left*40}";
+1009 print "{space}{reverse on}{space*4}{reverse off}{space*3}{reverse on}{space*2}{reverse off}{reverse on}{169}{space*18}{223}{reverse off}{reverse on}{space*2}{reverse off}{space*3}{reverse on}{space*4}{reverse off}{space}{down}{left*40}";
+1010 print "{space}{reverse on}{space*4}{reverse off}{space*3}{reverse on}{space*24}{reverse off}{space*3}{reverse on}{space*4}{reverse off}{space}{down}{left*40}";
+1011 print "{space}{reverse on}{space*4}{reverse off}{space*3}{reverse on}{space*24}{reverse off}{space*3}{reverse on}{space*4}{reverse off}{space}{down}{left*40}";
+1012 print "{space}{reverse on}{space*4}{reverse off}{space*2}{reverse on}{169}{space*24}{223}{reverse off}{space*2}{reverse on}{space*4}{reverse off}{space}{down}{left*40}";
+1013 print "{space}{reverse on}{space*4}{reverse off}{space}{reverse on}{169}{space*26}{223}{reverse off}{space}{reverse on}{space*4}{reverse off}{space}{down}{left*40}";
+1014 print "{space}{reverse on}{space*4}{reverse off}{reverse on}{169}{space*28}{223}{reverse off}{reverse on}{space*4}{reverse off}{space}{down}{left*40}";
+1100 return
+
+
+
